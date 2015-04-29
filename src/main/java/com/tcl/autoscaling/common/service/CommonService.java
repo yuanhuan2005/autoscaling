@@ -15,7 +15,6 @@ import java.util.Properties;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import com.tcl.autoscaling.awss3.service.AwsS3Service;
 import com.tcl.autoscaling.common.domain.CommandExecutedResult;
 
 public class CommonService
@@ -444,22 +443,6 @@ public class CommonService
 		}
 
 		return finalDirPath;
-	}
-
-	/**
-	 * 从桶名+对象名的相对路径获取S3的全路径
-	 * 
-	 * @param inputPath
-	 *            相对路径，格式为：/桶名/对象名，例如：/rideo/video/test/test.mp4
-	 * @return 能够访问的S3全路径，例如：http://s3.amazonaws.com/rideo/video/test/test.mp4
-	 *         或者带签名和过期时间的地址http://
-	 *         rideo.s3.amazonaws.com/video/test/test.mp4?Expires=1380345878
-	 *         &AWSAccessKeyId
-	 *         =AKIAI57VEFB4FVT7TQNA&Signature=8kOgGMkSkynLMzEySiUB6506lGc%3D
-	 */
-	public static String genS3InputPath(String inputPath)
-	{
-		return AwsS3Service.genS3InputPath(inputPath);
 	}
 
 	/**
