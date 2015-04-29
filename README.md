@@ -24,3 +24,49 @@ AutoScaling是AWS下面的一个比较强大的服务，借助于它，我们可
 3）在当前循环周期内，ScaleUp完成之后就进行ScaleDown策略检查，真正运行ScaleDown策略的机制是在EC2虚拟机里面通过cron任务来执行的，在AutoScaling中仅仅是判断哪些虚拟机在当前循环周期内被删除了，如果检测到有虚拟机被删除掉，则发邮件通知。
 
 4）ScaleUp和ScaleDown在当前周期全部执行完毕之后，等待一段时间，然后重新进入下一次循环周期。
+
+
+### 4. 代码结构
+代码位于autoscaling/src/main/java/com/tcl/autoscaling下面：
+awsec2    #EC2创建新的虚拟机接口
+awsses    #SES接口，用于发邮件
+awssqs    #SQS接口，用于操作SQS中的消息
+common    #公共方法
+listener    #监听器
+mail    #发邮件接口
+transcode    #执行业务Scale的核心代码
+
+### 5. 配置文件
+配置文件位于autoscaling/src/main/resources/autoscaling.propertites中：
+
+
+> awsAccessKeyId=YOUR_ACCESS_KEY    #AWS的access key id  
+> awsSecretAccessKey=YOUR_SECRET_KEY    #access key对应的secret key  
+> queueMessageCheckDuration=600    #队列中的消息检查周期，单位：秒  
+> transcodeMonitorQueueURL=https://sqs.us-east-1.amazonaws.com/xxxxxxxxxxxxx/transcoderQueue    #队列地址  
+> transcodeMonitorQueueTotalNumberThreshold=1    #队列消息个数的阀值  
+> transcodeInstanceLanchNumber=1    #启动的虚拟机个数  
+> transcodeImageIdToLanchInstances=ami-88888888    #启动虚拟机使用的镜像id  
+> transcodeRegion=us-west-2    #虚拟机在哪个region创建  
+> transcodeAvailabilityZones=us-west-2a,us-west-2b,us-west-2c    #虚拟机在上面的region中哪个可用分区中创建  
+> transcodeMaxInstancesNum=20    #创建虚拟机的最大个数  
+> transcodeInstanceType=m1.xlarge    #虚拟机规格  
+> transcodeKeyPair=transcoder_for_asg    #虚拟机keypair，用于ssh登录  
+> transcodeSecurityGroupId=sg-f321c896    #虚拟机所在的安全组  
+> transcodeInstanceName=test    #虚拟机名称，便于管理  
+> transcodeCoolDownTimeInSeconds=1200    #cooldown时间，单位：秒  
+> notificationEmails=user1@example.com;user2@example.com;user3@example.com    #email列表，多个email用分号分割  
+
+3.4.3 shell脚本
+在EC2虚拟机中需要安装如下的脚本，默认安装路径是/home/ec2-user/bin/，如有变化可对应修改。
+脚本解释如下：
+> check_dispatcher_status.sh     #检查运行状态。如果空转，则将idle_number的数字加1，当idle_number达到配置的上限时执行关机命> 令进行自我删除；如果没有空转即正在运行任务，则将idle_number清零，等待进入下次检查周期。  
+> idle_number    #记录空转次数的文件  
+> dispatcher     #注册为系统服务，以便可以用service命令进行管理，文件路径：/etc/init.d/dispatcher  
+> restart_tomcat.sh    #重启tomcat的脚本  
+> start_tomcat.sh     #启动tomcat的脚本  
+> status_tomcat.sh     #检查tomcat运行状态的脚本  
+> stop_tomcat.sh    #停止tomcat的脚本  
+
+这些脚本的调用关系见下图所示：  
+![](http://i.imgur.com/m4daGw0.jpg)
