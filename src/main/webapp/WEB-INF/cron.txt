@@ -1,0 +1,1 @@
+*/1 * * * *   /bin/bash /home/ec2-user/bin/check_dispatcher_status.sh >> /home/ec2-user/dispatcher.log 2>&1
